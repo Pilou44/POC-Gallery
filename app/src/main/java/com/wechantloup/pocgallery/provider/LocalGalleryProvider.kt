@@ -117,6 +117,18 @@ object LocalGalleryProvider {
             }
         }
 
+    fun getAlbumFirstImages(
+        contentResolver: ContentResolver,
+        albumName: String,
+        albumId: String?,
+    ): List<Photo> =
+        fetchGalleryImages(
+            contentResolver,
+            albumName,
+            albumId,
+            0,
+        )
+
     @SuppressLint("InlinedApi")
     private fun fetchGalleryImages(
         contentResolver: ContentResolver,

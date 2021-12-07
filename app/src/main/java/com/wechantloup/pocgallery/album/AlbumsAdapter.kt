@@ -28,9 +28,29 @@ class AlbumsAdapter(
 
         fun bind(item: PhotoAlbum) {
             binding.tvTitle.text = item.title
+
             Glide.with(itemView.context)
-                .load(item.coverPhotoPath)
+                .load(item.coverPhotoPath.first())
                 .into(binding.ivCover)
+
+            if (item.coverPhotoPath.size > 1) {
+                Glide.with(itemView.context)
+                    .load(item.coverPhotoPath[1])
+                    .into(binding.ivThumbnail1)
+            }
+
+            if (item.coverPhotoPath.size > 2) {
+                Glide.with(itemView.context)
+                    .load(item.coverPhotoPath[2])
+                    .into(binding.ivThumbnail2)
+            }
+
+            if (item.coverPhotoPath.size > 3) {
+                Glide.with(itemView.context)
+                    .load(item.coverPhotoPath[3])
+                    .into(binding.ivThumbnail3)
+            }
+
             itemView.setOnClickListener { onAlbumClicked(item.id, item.title) }
         }
     }

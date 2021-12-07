@@ -2,9 +2,7 @@ package com.wechantloup.pocgallery.provider
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
-import android.content.ContentUris
 import android.database.Cursor
-import android.net.Uri
 import android.provider.MediaStore
 import android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
 import android.util.Log
@@ -47,33 +45,20 @@ class PhoneAlbumsLoader(
     private fun Cursor.createProviderAlbumFromId(bucketId: String): PhotoAlbum {
         val bucketName = getString(getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME))
 
-        val pathToPhoto = getMostRecentPhotoPath(bucketId)?.toString().orEmpty()
+        val photos = getMostRecentPhotoPath(bucketId, bucketName)
         val count = getCount(bucketId, bucketName)
 
-        return PhotoAlbum(bucketId, bucketName, count, pathToPhoto)
+        return PhotoAlbum(bucketId, bucketName, count, photos)
     }
 
-    private fun getMostRecentPhotoPath(bucketId: String): Uri? {
-        var cursor: Cursor? = null
-        var photoId: Long? = null
+    private fun getMostRecentPhotoPath(bucketId: String, bucketName: String): List<String> {
+        val photos = LocalGalleryProvider.getAlbumFirstImages(
+            contentResolver,
+            bucketName,
+            bucketId
+        )
 
-        try {
-            cursor = contentResolver.query(
-                EXTERNAL_CONTENT_URI,
-                PROJECTION_PHOTO_PATH,
-                "${MediaStore.Images.Media.BUCKET_ID}=?",
-                arrayOf(bucketId),
-                "${MediaStore.Images.Media.DATE_TAKEN} DESC"
-            )
-
-            cursor.ifValid { photoId = getLong(getColumnIndexOrThrow(MediaStore.Images.Media._ID)) }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error loading local provider albums", e)
-        } finally {
-            cursor?.close()
-        }
-
-        return photoId?.let { ContentUris.withAppendedId(EXTERNAL_CONTENT_URI, it) }
+        return photos.map { it.uri }
     }
 
     private fun getCount(bucketId: String, bucketName: String): Int {
@@ -108,7 +93,6 @@ class PhoneAlbumsLoader(
 
         private const val SORT_ORDER =
             " CASE ${MediaStore.Images.Media.BUCKET_DISPLAY_NAME} WHEN  'Camera' THEN 1 ELSE 2 END "
-        private val PROJECTION_PHOTO_PATH = arrayOf(MediaStore.Images.Media._ID)
         private val PROJECTION_BUCKETS = arrayOf(
             MediaStore.Images.Media.BUCKET_DISPLAY_NAME,
             MediaStore.Images.Media.BUCKET_ID

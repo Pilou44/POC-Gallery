@@ -4,5 +4,5 @@ data class PhotoAlbum(
     val id: String,
     val title: String,
     val photoCount: Int,
-    val coverPhotoPath: String,
+    val coverPhotoPath: List<String>,
 )
