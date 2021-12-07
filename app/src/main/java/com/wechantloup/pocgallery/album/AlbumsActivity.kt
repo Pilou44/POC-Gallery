@@ -24,6 +24,8 @@ class AlbumsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        title = "Gallery"
+
         binding = ActivityAlbumsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 

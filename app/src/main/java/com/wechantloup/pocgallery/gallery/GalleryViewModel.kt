@@ -45,7 +45,10 @@ class GalleryViewModel(
     private fun MutableList<Any>.addWithDateSeparator(photos: List<Photo>) {
         photos.forEach { newPhoto ->
             if (isNewDate(this, newPhoto)) {
-                add(newPhoto.getDate())
+                val newDate = newPhoto.getDate()
+                add(newDate)
+                val currentDates = stateFlow.value.dates
+                _stateFlow.value = stateFlow.value.copy(dates = currentDates + newDate)
             }
             add(newPhoto)
         }
@@ -59,13 +62,9 @@ class GalleryViewModel(
         return (list.last() as Photo).getDate() != newPhoto.getDate()
     }
 
-    fun Photo.getDate(): String {
-//        if (currentPhoto.date == 0L) return null
-
+    private fun Photo.getDate(): String {
         val currentDate = Date(date)
-
         calendar.setTimeWithTimeZoneShift(currentDate)
-
         return outputDateFormat.format(calendar.time)
     }
 
@@ -76,7 +75,8 @@ class GalleryViewModel(
 
     data class State(
         val title: String,
-        val photos: List<Any> = emptyList()
+        val photos: List<Any> = emptyList(),
+        val dates: List<String> = emptyList(),
     )
 
     class Factory(
