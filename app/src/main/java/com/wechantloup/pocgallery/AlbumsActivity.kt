@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ListAdapter
 import com.wechantloup.pocgallery.databinding.ActivityAlbumsBinding
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -52,6 +53,7 @@ class AlbumsActivity : AppCompatActivity() {
                 it.albums.map {
                     Log.i("TOTO", it.title)
                 }
+                (binding.listAlbums.adapter as AlbumsAdapter).submitList(it.albums)
             }
             .launchIn(lifecycleScope)
     }
