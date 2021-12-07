@@ -3,6 +3,7 @@ package com.wechantloup.pocgallery.gallery
 import android.annotation.SuppressLint
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -13,7 +14,9 @@ import com.wechantloup.pocgallery.databinding.ItemPhotoLayoutBinding
 import com.wechantloup.pocgallery.inflate
 import com.wechantloup.pocgallery.provider.Photo
 
-class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
+class PhotosAdapter(
+    val onPhotoClicked: (Photo) -> Unit,
+): ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemHolder {
         return when (ItemType.values().first { it.ordinal == viewType }) {
@@ -29,7 +32,7 @@ class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
-            is Photo -> ItemType.PHOTO
+            is DisplayedPhoto -> ItemType.PHOTO
             is String -> ItemType.DATE
             else -> throw IllegalStateException()
         }.ordinal
@@ -44,10 +47,12 @@ class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
         private val binding = ItemPhotoLayoutBinding.bind(itemView)
 
         override fun bind(item: Any) {
-            val photo = item as Photo
+            val photo = (item as DisplayedPhoto).photo
             Glide.with(itemView.context)
                 .load(photo.uri)
                 .into(binding.ivPhoto)
+            binding.isSelected.isVisible = item.isSelected
+            itemView.setOnClickListener { onPhotoClicked(photo) }
         }
     }
 
@@ -71,7 +76,7 @@ class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
         private val diffCallback = object : DiffUtil.ItemCallback<Any>() {
             override fun areItemsTheSame(oldItem: Any, newItem: Any): Boolean {
                 return when {
-                    oldItem is Photo && newItem is Photo -> oldItem.id == newItem.id
+                    oldItem is DisplayedPhoto && newItem is DisplayedPhoto -> oldItem.photo.id == newItem.photo.id
                     oldItem is String && newItem is String -> true
                     else -> false
                 }
@@ -80,11 +85,12 @@ class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
             @SuppressLint("DiffUtilEquals")
             override fun areContentsTheSame(oldItem: Any, newItem: Any): Boolean {
                 return when {
-                    oldItem is Photo && newItem is Photo -> {
-                        oldItem.uri == newItem.uri &&
-                            oldItem.widthPx == newItem.widthPx &&
-                            oldItem.heightPx == newItem.heightPx &&
-                            oldItem.date == newItem.date
+                    oldItem is DisplayedPhoto && newItem is DisplayedPhoto -> {
+                        oldItem.photo.uri == newItem.photo.uri &&
+                            oldItem.photo.widthPx == newItem.photo.widthPx &&
+                            oldItem.photo.heightPx == newItem.photo.heightPx &&
+                            oldItem.photo.date == newItem.photo.date &&
+                            oldItem.isSelected == newItem.isSelected
                     }
                     oldItem is String && newItem is String -> oldItem == newItem
                     else -> false

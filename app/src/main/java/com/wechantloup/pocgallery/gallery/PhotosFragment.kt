@@ -14,7 +14,9 @@ import com.wechantloup.pocgallery.GalleryActivity
 import com.wechantloup.pocgallery.GalleryViewModel
 import com.wechantloup.pocgallery.R
 import com.wechantloup.pocgallery.databinding.FragmentPhotosBinding
+import com.wechantloup.pocgallery.provider.Photo
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -61,7 +63,8 @@ class PhotosFragment : Fragment() {
     }
 
     private fun RecyclerView.initPhotoList() {
-        adapter = PhotosAdapter()
+        val viewModel = viewModel ?: return
+        adapter = PhotosAdapter(::onPhotoClicked)
 
         val columnCount = resources.getInteger(R.integer.gallery_column_count)
         val gridLayoutManager = GridLayoutManager(requireContext(), columnCount)
@@ -87,11 +90,21 @@ class PhotosFragment : Fragment() {
         })
     }
 
+    private fun onPhotoClicked(photo: Photo) {
+        viewModel?.changeSelection(photo)
+    }
+
     private fun subscribeToUpdates() {
         viewModel?.stateFlow
             ?.flowWithLifecycle(lifecycle)
             ?.onEach {
-                (binding?.listPhotos?.adapter as PhotosAdapter?)?.submitList(it.photos)
+                (binding?.listPhotos?.adapter as PhotosAdapter?)?.submitList(
+                    it.photos.map { item ->
+                        if (item !is Photo) return@map item
+                        val isSelected = it.selectedPictures.firstOrNull { it.id == item.id } != null
+                        DisplayedPhoto(item, isSelected)
+                    }
+                )
                 (binding?.listDates?.adapter as DatesAdapter?)?.submitList(it.dates)
             }
             ?.launchIn(lifecycleScope)

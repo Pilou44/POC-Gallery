@@ -75,12 +75,24 @@ class GalleryViewModel(application: Application): AndroidViewModel(application) 
         val albums: List<PhotoAlbum> = emptyList(),
         val photos: List<Any> = emptyList(),
         val dates: List<String> = emptyList(),
+        val selectedPictures: List<Photo> = emptyList(),
     )
 
     suspend fun getAlbums() {
         _stateFlow.value = stateFlow.value.copy(
             albums = LocalGalleryProvider.getNextAlbums(getApplication())
         )
+    }
+
+    fun changeSelection(photo: Photo) {
+        val selectedPictures = stateFlow.value.selectedPictures
+        val clickedPicture = selectedPictures.firstOrNull { it.id == photo.id }
+        if (clickedPicture == null) {
+            _stateFlow.value = stateFlow.value.copy(selectedPictures = selectedPictures + photo)
+        } else {
+            val newList = selectedPictures - clickedPicture
+            _stateFlow.value = stateFlow.value.copy(selectedPictures = newList)
+        }
     }
 
     class Factory(private val activity: Activity) : ViewModelProvider.Factory {
