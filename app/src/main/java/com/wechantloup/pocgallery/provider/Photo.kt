@@ -5,6 +5,5 @@ open class Photo(
     val uri: String,
     val widthPx: Int,
     val heightPx: Int,
-    val date: Long? = null,
-    var hash: String? = null,
+    val date: Long,
 )

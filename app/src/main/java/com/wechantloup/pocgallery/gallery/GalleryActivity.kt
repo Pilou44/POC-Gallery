@@ -45,8 +45,18 @@ class GalleryActivity : AppCompatActivity() {
     private fun initList() {
         val columnCount = resources.getInteger(R.integer.gallery_column_count)
         binding.listPhotos.apply {
-            layoutManager = GridLayoutManager(this@GalleryActivity, columnCount)
             adapter = GalleryAdapter()
+
+            val gridLayoutManager = GridLayoutManager(this@GalleryActivity, columnCount)
+            gridLayoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+                override fun getSpanSize(position: Int): Int {
+                    if (adapter?.getItemViewType(position) == GalleryAdapter.ItemType.DATE.ordinal)
+                        return gridLayoutManager.spanCount
+                    return 1
+                }
+            }
+            layoutManager = gridLayoutManager
+
             addOnScrollListener(object : RecyclerView.OnScrollListener() {
                 override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                     val hasReachBottom = !recyclerView.canScrollVertically(1)

@@ -242,7 +242,7 @@ object LocalGalleryProvider {
             uri = photoUri,
             widthPx = newSize.width,
             heightPx = newSize.height,
-            date = cursorDateReader.getDate()
+            date = cursorDateReader.getDate() ?: 0L
         )
         add(photo)
     }
