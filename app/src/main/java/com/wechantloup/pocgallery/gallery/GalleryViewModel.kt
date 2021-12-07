@@ -23,7 +23,9 @@ class GalleryViewModel(
         LocalGalleryProvider.openAlbum(albumId)
     }
 
-    suspend fun getPhotos() {
+    suspend fun loadMorePhotos() {
+        if (!LocalGalleryProvider.hasMorePhotos()) return
+
         val nextPhotos = LocalGalleryProvider.getNextPhotos(getApplication())
         val currentPhotos = stateFlow.value.photos
         _stateFlow.value = stateFlow.value.copy(

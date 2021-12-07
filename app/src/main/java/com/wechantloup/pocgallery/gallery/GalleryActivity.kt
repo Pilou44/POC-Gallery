@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.flowWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.wechantloup.pocgallery.R
 import com.wechantloup.pocgallery.databinding.ActivityGalleryBinding
 import kotlinx.coroutines.flow.launchIn
@@ -37,7 +38,7 @@ class GalleryActivity : AppCompatActivity() {
         if (savedInstanceState != null) return
 
         lifecycleScope.launch {
-            viewModel.getPhotos()
+            viewModel.loadMorePhotos()
         }
     }
 
@@ -46,6 +47,17 @@ class GalleryActivity : AppCompatActivity() {
         binding.listPhotos.apply {
             layoutManager = GridLayoutManager(this@GalleryActivity, columnCount)
             adapter = GalleryAdapter()
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    val hasReachBottom = !recyclerView.canScrollVertically(1)
+
+                    if (hasReachBottom) {
+                        lifecycleScope.launch {
+                            viewModel.loadMorePhotos()
+                        }
+                    }
+                }
+            })
         }
     }
 
