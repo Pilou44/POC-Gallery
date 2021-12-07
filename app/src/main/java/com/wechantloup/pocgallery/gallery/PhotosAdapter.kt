@@ -13,16 +13,16 @@ import com.wechantloup.pocgallery.databinding.ItemPhotoLayoutBinding
 import com.wechantloup.pocgallery.inflate
 import com.wechantloup.pocgallery.provider.Photo
 
-class GalleryAdapter: ListAdapter<Any, GalleryAdapter.GalleryHolder>(diffCallback) {
+class PhotosAdapter: ListAdapter<Any, PhotosAdapter.ItemHolder>(diffCallback) {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): GalleryHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ItemHolder {
         return when (ItemType.values().first { it.ordinal == viewType }) {
             ItemType.PHOTO -> PhotoHolder(parent)
             ItemType.DATE -> DateHolder(parent)
         }
     }
 
-    override fun onBindViewHolder(holder: GalleryHolder, position: Int) {
+    override fun onBindViewHolder(holder: ItemHolder, position: Int) {
         val item = getItem(position)
         holder.bind(item)
     }
@@ -35,11 +35,11 @@ class GalleryAdapter: ListAdapter<Any, GalleryAdapter.GalleryHolder>(diffCallbac
         }.ordinal
     }
 
-    sealed class GalleryHolder(view: View): RecyclerView.ViewHolder(view) {
+    sealed class ItemHolder(view: View): RecyclerView.ViewHolder(view) {
         abstract fun bind(item: Any)
     }
 
-    inner class PhotoHolder(parent: ViewGroup): GalleryHolder(parent.inflate(R.layout.item_photo_layout)) {
+    inner class PhotoHolder(parent: ViewGroup): ItemHolder(parent.inflate(R.layout.item_photo_layout)) {
 
         private val binding = ItemPhotoLayoutBinding.bind(itemView)
 
@@ -51,7 +51,7 @@ class GalleryAdapter: ListAdapter<Any, GalleryAdapter.GalleryHolder>(diffCallbac
         }
     }
 
-    inner class DateHolder(parent: ViewGroup): GalleryHolder(parent.inflate(R.layout.item_date_layout)) {
+    inner class DateHolder(parent: ViewGroup): ItemHolder(parent.inflate(R.layout.item_date_layout)) {
 
         private val binding = ItemDateLayoutBinding.bind(itemView)
 
