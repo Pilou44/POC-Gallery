@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import android.content.Intent
 import android.database.Cursor
 import android.os.Build
 import android.os.Bundle
@@ -12,8 +11,6 @@ import android.provider.BaseColumns
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Size
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import com.wechantloup.pocgallery.provider.PhoneAlbumsLoader.Companion.ALL_PHOTOS_EMULATED_BUCKET
 import kotlin.coroutines.suspendCoroutine
 
@@ -40,49 +37,21 @@ object LocalGalleryProvider {
 
     private var albumsLoading = false
     private var lastLoadedPageNumber = -1
-    private var firstLoadedPageNumber = 0
     private var currentAlbumId: String? = null
 
     private val currentAlbumFetchedPhotos: MutableList<Photo> = mutableListOf()
     private val fetchedAlbums = arrayListOf<PhotoAlbum>()
 
-//    fun getName(): Int = NAME_RES
-//    fun getIcon(): Int = ICON_RES
-//    fun getMonochromeIcon(): Int = MONOCHROME_ICON_RES
-
-    fun needLogin(): Boolean = false
-
-    fun askForLogin() {
-        // no login necessary for local gallery provider
-    }
-
-    fun hasMoreAlbums(): Boolean = false
-
     fun openAlbum(albumId: String) {
         currentAlbumId = albumId
         currentAlbumFetchedPhotos.clear()
-        setCurrentPage(0)
+        lastLoadedPageNumber = - 1
     }
 
     fun hasMorePhotos(): Boolean {
         val currentAlbum = fetchedAlbums.find { it.id == currentAlbumId } ?: return true
         return currentAlbumFetchedPhotos.count() < currentAlbum.photoCount
     }
-
-    fun canOpenPhotosAtAnyPage(): Boolean = true
-    fun canOpenAlbumsAtAnyPage(): Boolean = false
-
-    fun resetPagination() {
-        currentAlbumId = null
-        setCurrentPage(0)
-    }
-
-    fun setCurrentPage(page: Int) {
-        lastLoadedPageNumber = page - 1
-        firstLoadedPageNumber = page
-    }
-
-    fun getLastLoadedPage(): Int = lastLoadedPageNumber
 
     suspend fun getNextAlbums(context: Context): List<PhotoAlbum> {
         val contentResolver = context.contentResolver
@@ -104,11 +73,7 @@ object LocalGalleryProvider {
         return fetchedAlbums
     }
 
-    suspend fun getPreviousAlbums(): List<PhotoAlbum> {
-        throw IllegalStateException("Unsupported feature")
-    }
-
-    suspend fun getNextPhotos(context: Context): List<Photo> {
+    fun getNextPhotos(context: Context): List<Photo> {
         if (!hasMorePhotos()) return emptyList()
 
         val album = fetchedAlbums.find { it.id == currentAlbumId } ?: return emptyList()
@@ -120,30 +85,6 @@ object LocalGalleryProvider {
         currentAlbumFetchedPhotos.addAll(photos)
 
         return photos
-    }
-
-    suspend fun getPreviousPhotos(context: Context): List<Photo> {
-        if (!hasMorePhotos()) return emptyList()
-
-        val album = fetchedAlbums.find { it.id == currentAlbumId } ?: return emptyList()
-
-        if (currentAlbumFetchedPhotos.isEmpty()) firstLoadedPageNumber = 0
-
-        if (firstLoadedPageNumber == 0) return emptyList()
-
-        firstLoadedPageNumber--
-
-        val photos = fetchGalleryImages(context.contentResolver, album.title, currentAlbumId, firstLoadedPageNumber)
-
-        currentAlbumFetchedPhotos.addAll(0, photos)
-
-        return photos
-    }
-
-    fun getLoginActivityResultAction(): ((ActivityResult) -> Unit)? = null
-
-    fun setLoginActivityResultLauncher(activityResultLauncher: ActivityResultLauncher<Intent>) {
-        // do nothing, no log in associated to the local gallery provider
     }
 
     private fun createDefaultPhotoAlbum(

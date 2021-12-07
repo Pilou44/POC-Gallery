@@ -23,7 +23,7 @@ class GalleryViewModel(
         LocalGalleryProvider.openAlbum(albumId)
     }
 
-    suspend fun loadMorePhotos() {
+    fun loadMorePhotos() {
         if (!LocalGalleryProvider.hasMorePhotos()) return
 
         val nextPhotos = LocalGalleryProvider.getNextPhotos(getApplication())
