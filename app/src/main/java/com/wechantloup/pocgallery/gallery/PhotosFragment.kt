@@ -16,7 +16,6 @@ import com.wechantloup.pocgallery.R
 import com.wechantloup.pocgallery.databinding.FragmentPhotosBinding
 import com.wechantloup.pocgallery.provider.Photo
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
@@ -83,7 +82,7 @@ class PhotosFragment : Fragment() {
 
                 if (hasReachBottom) {
                     lifecycleScope.launch {
-                        viewModel?.loadMorePhotos()
+                        viewModel.loadMorePhotos()
                     }
                 }
             }

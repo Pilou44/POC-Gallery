@@ -26,7 +26,10 @@ class GalleryViewModel(application: Application): AndroidViewModel(application) 
 
     fun onAlbumClicked(albumId: String) {
         LocalGalleryProvider.openAlbum(albumId)
-        _stateFlow.value = stateFlow.value.copy(photos = emptyList())
+        _stateFlow.value = stateFlow.value.copy(
+            photos = emptyList(),
+            dates = emptyList(),
+        )
     }
 
     fun loadMorePhotos() {
