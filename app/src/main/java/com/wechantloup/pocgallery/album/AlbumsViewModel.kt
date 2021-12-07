@@ -1,8 +1,7 @@
-package com.wechantloup.pocgallery
+package com.wechantloup.pocgallery.album
 
 import android.app.Activity
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,12 +15,9 @@ class AlbumsViewModel(application: Application): AndroidViewModel(application) {
     private val _stateFlow = MutableStateFlow(State())
     val stateFlow: StateFlow<State> = _stateFlow
 
-    private val provider = LocalGalleryProvider(application)
-
     suspend fun getAlbums() {
-        Log.i("TOTO", "getAlbums()")
         _stateFlow.value = stateFlow.value.copy(
-            albums = provider.getNextAlbums()
+            albums = LocalGalleryProvider.getNextAlbums(getApplication())
         )
     }
 

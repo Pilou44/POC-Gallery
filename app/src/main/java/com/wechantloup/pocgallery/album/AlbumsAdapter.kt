@@ -1,14 +1,18 @@
-package com.wechantloup.pocgallery
+package com.wechantloup.pocgallery.album
 
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.wechantloup.pocgallery.R
 import com.wechantloup.pocgallery.databinding.ItemAlbumLayoutBinding
+import com.wechantloup.pocgallery.inflate
 import com.wechantloup.pocgallery.provider.PhotoAlbum
 
-class AlbumsAdapter: ListAdapter<PhotoAlbum, AlbumsAdapter.AlbumHolder>(diffCallback) {
+class AlbumsAdapter(
+    val onAlbumClicked: (String, String) -> Unit
+): ListAdapter<PhotoAlbum, AlbumsAdapter.AlbumHolder>(diffCallback) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AlbumHolder {
         return AlbumHolder(parent)
@@ -27,6 +31,7 @@ class AlbumsAdapter: ListAdapter<PhotoAlbum, AlbumsAdapter.AlbumHolder>(diffCall
             Glide.with(itemView.context)
                 .load(item.coverPhotoPath)
                 .into(binding.ivCover)
+            itemView.setOnClickListener { onAlbumClicked(item.id, item.title) }
         }
     }
 

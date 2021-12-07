@@ -17,7 +17,26 @@ import androidx.activity.result.ActivityResultLauncher
 import com.wechantloup.pocgallery.provider.PhoneAlbumsLoader.Companion.ALL_PHOTOS_EMULATED_BUCKET
 import kotlin.coroutines.suspendCoroutine
 
-class LocalGalleryProvider(private val context: Context) {
+object LocalGalleryProvider {
+
+    private const val TAG = "LocalGalleryProvider"
+
+    private const val PAGINATION_COUNT = 50
+    private val UNSUPPORTED_IMG_TYPE = setOf("gif")
+
+    @SuppressLint("InlinedApi")
+    private val PHOTO_PROJECTION = arrayOf(
+        BaseColumns._ID,
+        MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME,
+        MediaStore.Images.Media._ID,
+        MediaStore.Images.Media.MIME_TYPE,
+        MediaStore.Images.Media.WIDTH,
+        MediaStore.Images.Media.HEIGHT,
+        MediaStore.Images.Media.ORIENTATION,
+        MediaStore.Images.ImageColumns.DATE_TAKEN,
+        MediaStore.Images.Media.DATE_ADDED,
+        MediaStore.Images.Media.DATE_MODIFIED
+    )
 
     private var albumsLoading = false
     private var lastLoadedPageNumber = -1
@@ -65,14 +84,16 @@ class LocalGalleryProvider(private val context: Context) {
 
     fun getLastLoadedPage(): Int = lastLoadedPageNumber
 
-    suspend fun getNextAlbums(): List<PhotoAlbum> {
+    suspend fun getNextAlbums(context: Context): List<PhotoAlbum> {
+        val contentResolver = context.contentResolver
+
         albumsLoading = true
 
         val albums: List<PhotoAlbum> = suspendCoroutine {
-            PhoneAlbumsLoader(context.contentResolver, it).loadAlbums()
+            PhoneAlbumsLoader(contentResolver, it).loadAlbums()
         }
 
-        val defaultPhotoAlbum = createDefaultPhotoAlbum(albums)
+        val defaultPhotoAlbum = createDefaultPhotoAlbum(contentResolver, albums)
 
         fetchedAlbums.clear()
         fetchedAlbums.add(defaultPhotoAlbum)
@@ -87,21 +108,21 @@ class LocalGalleryProvider(private val context: Context) {
         throw IllegalStateException("Unsupported feature")
     }
 
-    suspend fun getNextPhotos(): List<Photo> {
+    suspend fun getNextPhotos(context: Context): List<Photo> {
         if (!hasMorePhotos()) return emptyList()
 
         val album = fetchedAlbums.find { it.id == currentAlbumId } ?: return emptyList()
 
         lastLoadedPageNumber++
 
-        val photos = fetchGalleryImages(album.title, currentAlbumId, lastLoadedPageNumber)
+        val photos = fetchGalleryImages(context.contentResolver, album.title, currentAlbumId, lastLoadedPageNumber)
 
         currentAlbumFetchedPhotos.addAll(photos)
 
         return photos
     }
 
-    suspend fun getPreviousPhotos(): List<Photo> {
+    suspend fun getPreviousPhotos(context: Context): List<Photo> {
         if (!hasMorePhotos()) return emptyList()
 
         val album = fetchedAlbums.find { it.id == currentAlbumId } ?: return emptyList()
@@ -112,7 +133,7 @@ class LocalGalleryProvider(private val context: Context) {
 
         firstLoadedPageNumber--
 
-        val photos = fetchGalleryImages(album.title, currentAlbumId, firstLoadedPageNumber)
+        val photos = fetchGalleryImages(context.contentResolver, album.title, currentAlbumId, firstLoadedPageNumber)
 
         currentAlbumFetchedPhotos.addAll(0, photos)
 
@@ -125,19 +146,22 @@ class LocalGalleryProvider(private val context: Context) {
         // do nothing, no log in associated to the local gallery provider
     }
 
-    private fun createDefaultPhotoAlbum(albums: List<PhotoAlbum>): PhotoAlbum {
+    private fun createDefaultPhotoAlbum(
+        contentResolver: ContentResolver,
+        albums: List<PhotoAlbum>
+    ): PhotoAlbum {
         return PhotoAlbum(
             ALL_PHOTOS_EMULATED_BUCKET,
             getAllLocalPhotosTitle(),
-            getAllLocalPhotosCount(),
+            getAllLocalPhotosCount(contentResolver),
             albums.firstOrNull()?.coverPhotoPath.orEmpty(),
         )
     }
 
     private fun getAllLocalPhotosTitle(): String = "Gallery"
 
-    private fun getAllLocalPhotosCount(): Int =
-        context.contentResolver.query(
+    private fun getAllLocalPhotosCount(contentResolver: ContentResolver): Int =
+        contentResolver.query(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             null,
             null,
@@ -154,6 +178,7 @@ class LocalGalleryProvider(private val context: Context) {
 
     @SuppressLint("InlinedApi")
     private fun fetchGalleryImages(
+        contentResolver: ContentResolver,
         albumName: String,
         albumId: String?,
         pageNumber: Int,
@@ -168,15 +193,20 @@ class LocalGalleryProvider(private val context: Context) {
             selectionArgs = arrayOf(albumName)
         }
 
-        val cursor = getCursor(selection, selectionArgs, pageNumber)
+        val cursor = getCursor(contentResolver, selection, selectionArgs, pageNumber)
         return cursor.getNextPhotos()
     }
 
     @SuppressLint("InlinedApi")
-    private fun getCursor(selection: String?, selectionArgs: Array<String>?, pageNumber: Int): Cursor? =
+    private fun getCursor(
+        contentResolver: ContentResolver,
+        selection: String?,
+        selectionArgs: Array<String>?,
+        pageNumber: Int
+    ): Cursor? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // Get All data in Cursor by sorting in DESC order
-            context.contentResolver.query(
+            contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 PHOTO_PROJECTION,
                 Bundle().apply {
@@ -206,7 +236,7 @@ class LocalGalleryProvider(private val context: Context) {
                 " DESC LIMIT $PAGINATION_COUNT OFFSET ${pageNumber * PAGINATION_COUNT}"
 
             // Get All data in Cursor by sorting in DESC order
-            context.contentResolver.query(
+            contentResolver.query(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 PHOTO_PROJECTION,
                 selection,
@@ -283,25 +313,4 @@ class LocalGalleryProvider(private val context: Context) {
      */
     private fun localPhotoSize(width: Int, height: Int, orientation: Int): Size =
         if (orientation % 180 != 0) Size(height, width) else Size(width, height)
-
-    companion object {
-        private const val TAG = "LocalGalleryProvider"
-
-        private const val PAGINATION_COUNT = 50
-        private val UNSUPPORTED_IMG_TYPE = setOf("gif")
-
-        @SuppressLint("InlinedApi")
-        private val PHOTO_PROJECTION = arrayOf(
-            BaseColumns._ID,
-            MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME,
-            MediaStore.Images.Media._ID,
-            MediaStore.Images.Media.MIME_TYPE,
-            MediaStore.Images.Media.WIDTH,
-            MediaStore.Images.Media.HEIGHT,
-            MediaStore.Images.Media.ORIENTATION,
-            MediaStore.Images.ImageColumns.DATE_TAKEN,
-            MediaStore.Images.Media.DATE_ADDED,
-            MediaStore.Images.Media.DATE_MODIFIED
-        )
-    }
 }
